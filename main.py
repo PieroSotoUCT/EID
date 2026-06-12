@@ -44,19 +44,19 @@ frame_der.pack(side="right", fill="both", expand=True, padx=14, pady=14)
 
 titulo = ctk.CTkLabel(
     frame_izq,
-    text="Analizador\nde Límites",
-    font=ctk.CTkFont(size=22, weight="bold"),
+    text="Analizador de Límites",
+    font=ctk.CTkFont(size=18, weight="bold"),
     justify="center"
 )
-titulo.pack(pady=(20, 6))
+titulo.pack(pady=(12, 2))
 
 subtitulo = ctk.CTkLabel(
     frame_izq,
     text="MATE1133 — UCTemuco",
-    font=ctk.CTkFont(size=12),
+    font=ctk.CTkFont(size=10),
     text_color="gray"
 )
-subtitulo.pack(pady=(0, 18))
+subtitulo.pack(pady=(0, 8))
 
 separador1 = ctk.CTkFrame(frame_izq, height=2, fg_color="#3a3a3a")
 separador1.pack(fill="x", padx=20, pady=4)
@@ -67,7 +67,7 @@ ctk.CTkLabel(
     text="Función  f(x):",
     font=ctk.CTkFont(size=13, weight="bold"),
     anchor="w"
-).pack(padx=20, pady=(14, 2), anchor="w")
+).pack(padx=20, pady=(8, 2), anchor="w")
 
 ctk.CTkLabel(
     frame_izq,
@@ -80,11 +80,11 @@ ctk.CTkLabel(
 entrada_funcion = ctk.CTkEntry(
     frame_izq,
     width=330,
-    height=36,
+    height=34,
     placeholder_text="Ej: (x**2 - 1)/(x - 1)",
     font=ctk.CTkFont(size=13)
 )
-entrada_funcion.pack(padx=20, pady=(4, 12))
+entrada_funcion.pack(padx=20, pady=(4, 8))
 
 # Valor h
 ctk.CTkLabel(
@@ -104,11 +104,11 @@ ctk.CTkLabel(
 entrada_h = ctk.CTkEntry(
     frame_izq,
     width=330,
-    height=36,
+    height=34,
     placeholder_text="Ej: 1  ó  oo",
     font=ctk.CTkFont(size=13)
 )
-entrada_h.pack(padx=20, pady=(4, 16))
+entrada_h.pack(padx=20, pady=(4, 10))
 ctk.CTkLabel(
     frame_izq,
     text="Dirección del límite:",
@@ -122,13 +122,13 @@ selector_direccion = ctk.CTkOptionMenu(
     width=330,
     font=ctk.CTkFont(size=13)
 )
-selector_direccion.pack(padx=20, pady=(4, 16))
+selector_direccion.pack(padx=20, pady=(4, 10))
 # Boton
 boton = ctk.CTkButton(
     frame_izq,
     text="▶  Calcular Límite",
     width=330,
-    height=42,
+    height=38,
     font=ctk.CTkFont(size=14, weight="bold"),
     corner_radius=10,
     command=lambda: calcular()
@@ -136,7 +136,7 @@ boton = ctk.CTkButton(
 boton.pack(padx=20, pady=4)
 
 separador2 = ctk.CTkFrame(frame_izq, height=2, fg_color="#3a3a3a")
-separador2.pack(fill="x", padx=20, pady=14)
+separador2.pack(fill="x", padx=20, pady=9)
 
 # Resultado
 ctk.CTkLabel(
@@ -154,7 +154,7 @@ label_resultado = ctk.CTkLabel(
     wraplength=290,
     justify="center"
 )
-label_resultado.pack(padx=20, pady=(4, 10))
+label_resultado.pack(padx=20, pady=(2, 6))
 
 # Explicacion matematica del procedimiento
 ctk.CTkLabel(
@@ -167,12 +167,12 @@ ctk.CTkLabel(
 caja_pasos = ctk.CTkTextbox(
     frame_izq,
     width=345,
-    height=210,
-    font=ctk.CTkFont(size=13, family="Arial"),
+    height=285,
+    font=ctk.CTkFont(size=14, family="Arial"),
     wrap="word",
     state="disabled"
 )
-caja_pasos.pack(padx=20, pady=(4, 12))
+caja_pasos.pack(padx=20, pady=(4, 10))
 
 
 # ── Panel derecho: grafico ──
