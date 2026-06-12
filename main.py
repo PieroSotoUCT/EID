@@ -5,7 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Se importa la logica matematica desde limites.py para mantener separadas
 # la interfaz y la resolucion de los limites.
-from limites import calcular_limite_propio, x
+from limites import calcular_limite_propio, limite_lateral, x
 
 # ─────────────────────────────────────────────
 #  INTERFAZ GRAFICA
@@ -94,7 +94,7 @@ ctk.CTkLabel(
     text_color="gray",
     anchor="w"
 ).pack(padx=20, anchor="w")
-
+#NEW
 entrada_h = ctk.CTkEntry(
     frame_izq,
     width=280,
@@ -103,6 +103,21 @@ entrada_h = ctk.CTkEntry(
     font=ctk.CTkFont(size=13)
 )
 entrada_h.pack(padx=20, pady=(4, 16))
+ctk.CTkLabel(
+    frame_izq,
+    text="Dirección del límite:",
+    font=ctk.CTkFont(size=13, weight="bold"),
+    anchor="w"
+).pack(padx=20, anchor="w")
+
+selector_direccion = ctk.CTkOptionMenu(
+    frame_izq,
+    values=["Bilateral", "Izquierda (−)", "Derecha (+)"],
+    width=280
+)
+selector_direccion.pack(padx=20, pady=(4, 16))
+#NEW
+
 
 # Boton
 boton = ctk.CTkButton(
@@ -198,9 +213,18 @@ def calcular():
         else:
             h_val = sympify(h_str)
 
-        # ── Ejecutar algoritmo propio ──
-        resultado, pasos = calcular_limite_propio(expresion, h_val)
-
+        # ── Ejecutar algoritmo con selecciones
+        #NEW
+        direccion = selector_direccion.get()
+        if direccion == "Izquierda (−)":
+            resultado = limite_lateral(expresion, h_val, "-")
+            pasos = [f"Límite por la izquierda en x → {h_val}", f"Resultado: {resultado}"]
+        elif direccion == "Derecha (+)":
+            resultado = limite_lateral(expresion, h_val, "+")
+            pasos = [f"Límite por la derecha en x → {h_val}", f"Resultado: {resultado}"]
+        else:
+            resultado, pasos = calcular_limite_propio(expresion, h_val)
+        #NEW
         # Mostrar resultado
         if resultado is not None:
             label_resultado.configure(
