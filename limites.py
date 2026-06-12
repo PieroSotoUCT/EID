@@ -113,51 +113,62 @@ def limites_laterales_iguales(lim_izq, lim_der):
 
 def calcular_limite_propio(expresion, h_val):
     """
-    Construye el calculo del limite paso a paso.
-    Retorna (resultado_final, pasos_realizados).
+    Construye una explicacion del procedimiento utilizado para calcular el limite.
+    Retorna (resultado_final, explicacion).
     """
-    pasos = []
+    explicacion = []
     resultado_final = None
 
     # Primero se utiliza el metodo mas simple: reemplazar x directamente por h.
-    pasos.append("PASO 1: Sustitucion directa x -> h")
+    explicacion.append("Sustitución directa")
+    explicacion.append("")
+    explicacion.append(f"Se reemplaza x por {h_val} en la funcion.")
     resultado, exito = sustitucion_directa(expresion, h_val)
 
     if exito:
-        pasos.append(f"  -> Resultado directo: {resultado}")
-        pasos.append("  No hay indeterminacion. Limite obtenido.")
-        return resultado, pasos
+        explicacion.append(f"El resultado obtenido es {resultado}.")
+        explicacion.append("")
+        explicacion.append("Como no aparece una indeterminación,")
+        explicacion.append("ese valor corresponde al límite.")
+        return resultado, explicacion
 
-    pasos.append("  -> Indeterminacion detectada (ej: 0/0, infinito/infinito).")
-    pasos.append("  -> Se aplican transformaciones algebraicas.")
-
-    pasos.append("\nPASO 2: Transformaciones algebraicas con SymPy")
+    explicacion.append("La sustitución produce una indeterminación.")
+    explicacion.append("")
+    explicacion.append("Transformaciones algebraicas")
+    explicacion.append("")
+    explicacion.append("Se intenta simplificar la función para")
+    explicacion.append("eliminar la indeterminación encontrada.")
     transformaciones = aplicar_algebra(expresion)
 
     # Se prueban las transformaciones una por una hasta encontrar un resultado.
     for nombre, expresion_transformada in transformaciones:
-        pasos.append(f"  -> Intentando: {nombre}")
         resultado, exito = sustitucion_directa(expresion_transformada, h_val)
         if exito:
-            pasos.append(f"  Exito con {nombre}. Resultado: {resultado}")
+            explicacion.append(f"Método utilizado: {nombre}.")
+            explicacion.append(f"Expresión obtenida: {expresion_transformada}")
+            explicacion.append(f"Resultado al reemplazar: {resultado}")
             resultado_final = resultado
             break
-        else:
-            pasos.append(f"    Aun indeterminado despues de {nombre}.")
 
-    pasos.append("\nPASO 3: Verificacion con limites laterales")
+    explicacion.append("")
+    explicacion.append("Verificación con límites laterales")
+    explicacion.append("")
     lim_izq = limite_lateral(expresion, h_val, "-")
     lim_der = limite_lateral(expresion, h_val, "+")
-    pasos.append(f"  -> Limite por la izquierda: {lim_izq}")
-    pasos.append(f"  -> Limite por la derecha: {lim_der}")
+    explicacion.append(f"Por la izquierda: {lim_izq}")
+    explicacion.append(f"Por la derecha: {lim_der}")
 
     if lim_izq is not None and lim_der is not None:
         # Un limite existe solamente cuando ambos lados llegan al mismo valor.
         if limites_laterales_iguales(lim_izq, lim_der):
-            pasos.append("  Limites laterales iguales. El limite existe.")
+            explicacion.append("")
+            explicacion.append("Ambos lados entregan el mismo valor,")
+            explicacion.append("por lo tanto el límite existe.")
             resultado_final = lim_izq
         else:
-            pasos.append("  Limites laterales distintos. El limite no existe.")
-            return None, pasos
+            explicacion.append("")
+            explicacion.append("Los resultados laterales son diferentes,")
+            explicacion.append("por lo tanto el límite no existe.")
+            return None, explicacion
 
-    return resultado_final, pasos
+    return resultado_final, explicacion

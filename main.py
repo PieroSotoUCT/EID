@@ -16,7 +16,8 @@ ctk.set_default_color_theme("blue")
 
 # Ventana principal que contiene el panel de controles y el grafico.
 ventana = ctk.CTk()
-ventana.geometry("1050x700")
+ventana.geometry("1120x760")
+ventana.minsize(1050, 700)
 ventana.title("Analizador y Visualizador de Límites — MATE1133")
 ventana.resizable(True, True)
 
@@ -24,7 +25,7 @@ ventana.resizable(True, True)
 # ── Layout principal: izquierda (controles) + derecha (grafico) ──
 
 # El panel izquierdo recibe los datos y muestra el desarrollo.
-frame_izq = ctk.CTkFrame(ventana, width=340, corner_radius=12)
+frame_izq = ctk.CTkFrame(ventana, width=390, corner_radius=12)
 frame_izq.pack(side="left", fill="y", padx=14, pady=14)
 frame_izq.pack_propagate(False)
 
@@ -72,7 +73,7 @@ ctk.CTkLabel(
 
 entrada_funcion = ctk.CTkEntry(
     frame_izq,
-    width=280,
+    width=330,
     height=36,
     placeholder_text="Ej: (x**2 - 1)/(x - 1)",
     font=ctk.CTkFont(size=13)
@@ -94,10 +95,9 @@ ctk.CTkLabel(
     text_color="gray",
     anchor="w"
 ).pack(padx=20, anchor="w")
-#NEW
 entrada_h = ctk.CTkEntry(
     frame_izq,
-    width=280,
+    width=330,
     height=36,
     placeholder_text="Ej: 1  ó  oo",
     font=ctk.CTkFont(size=13)
@@ -113,17 +113,15 @@ ctk.CTkLabel(
 selector_direccion = ctk.CTkOptionMenu(
     frame_izq,
     values=["Bilateral", "Izquierda (−)", "Derecha (+)"],
-    width=280
+    width=330,
+    font=ctk.CTkFont(size=13)
 )
 selector_direccion.pack(padx=20, pady=(4, 16))
-#NEW
-
-
 # Boton
 boton = ctk.CTkButton(
     frame_izq,
     text="▶  Calcular Límite",
-    width=280,
+    width=330,
     height=42,
     font=ctk.CTkFont(size=14, weight="bold"),
     corner_radius=10,
@@ -152,19 +150,20 @@ label_resultado = ctk.CTkLabel(
 )
 label_resultado.pack(padx=20, pady=(4, 10))
 
-# Pasos del algoritmo
+# Explicacion matematica del procedimiento
 ctk.CTkLabel(
     frame_izq,
-    text="Pasos del algoritmo:",
-    font=ctk.CTkFont(size=12, weight="bold"),
+    text="Explicación del procedimiento:",
+    font=ctk.CTkFont(size=14, weight="bold"),
     anchor="w"
 ).pack(padx=20, anchor="w")
 
 caja_pasos = ctk.CTkTextbox(
     frame_izq,
-    width=295,
-    height=200,
-    font=ctk.CTkFont(size=10, family="Courier"),
+    width=345,
+    height=210,
+    font=ctk.CTkFont(size=13, family="Arial"),
+    wrap="word",
     state="disabled"
 )
 caja_pasos.pack(padx=20, pady=(4, 12))
@@ -214,17 +213,29 @@ def calcular():
             h_val = sympify(h_str)
 
         # ── Ejecutar algoritmo con selecciones
-        #NEW
         direccion = selector_direccion.get()
         if direccion == "Izquierda (−)":
             resultado = limite_lateral(expresion, h_val, "-")
-            pasos = [f"Límite por la izquierda en x → {h_val}", f"Resultado: {resultado}"]
+            pasos = [
+                "Límite lateral por la izquierda",
+                "",
+                f"Se estudian valores de x menores que {h_val},",
+                "cada vez más cercanos al punto.",
+                "",
+                f"El resultado obtenido es {resultado}."
+            ]
         elif direccion == "Derecha (+)":
             resultado = limite_lateral(expresion, h_val, "+")
-            pasos = [f"Límite por la derecha en x → {h_val}", f"Resultado: {resultado}"]
+            pasos = [
+                "Límite lateral por la derecha",
+                "",
+                f"Se estudian valores de x mayores que {h_val},",
+                "cada vez más cercanos al punto.",
+                "",
+                f"El resultado obtenido es {resultado}."
+            ]
         else:
             resultado, pasos = calcular_limite_propio(expresion, h_val)
-        #NEW
         # Mostrar resultado
         if resultado is not None:
             label_resultado.configure(
