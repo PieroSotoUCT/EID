@@ -307,6 +307,25 @@ def calcular():
         )
 
 
+def determinar_rango_grafico(h_val):
+    """Retorna el centro y rango visible segun el valor de tendencia."""
+    # Los limites al infinito necesitan un rango alejado de cero para mostrar
+    # el comportamiento de la funcion en la direccion correspondiente.
+    if h_val == oo:
+        return None, 1, 100
+
+    if h_val == -oo:
+        return None, -100, -1
+
+    try:
+        centro = float(h_val)
+    except Exception:
+        centro = 0
+
+    rango = 5
+    return centro, centro - rango, centro + rango
+
+
 def graficar(expresion, h_val, resultado):
     """Genera el grafico de la funcion con indicadores visuales."""
     # Se limpia el grafico anterior antes de dibujar la nueva funcion.
@@ -317,19 +336,7 @@ def graficar(expresion, h_val, resultado):
         spine.set_edgecolor("#555")
     ax.grid(True, color="#333", linestyle="--", linewidth=0.5)
 
-    # Para limites finitos, el grafico se centra alrededor de h.
-    # En limites al infinito se utiliza cero como centro visual.
-    try:
-        if h_val in [oo, -oo]:
-            centro = 0
-        else:
-            centro = float(h_val)
-    except Exception:
-        centro = 0
-
-    rango = 5
-    inicio = centro - rango
-    fin = centro + rango
+    centro, inicio, fin = determinar_rango_grafico(h_val)
 
     # Se construyen las listas con un ciclo while, sin utilizar NumPy.
     lista_x = []
@@ -377,7 +384,14 @@ def graficar(expresion, h_val, resultado):
         except Exception:
             pass
 
-    ax.set_title(f"Gráfico de f(x) con tendencia h = {h_val}", color="white", fontsize=11)
+    if h_val == oo:
+        titulo_grafico = "Comportamiento de f(x) cuando x tiende a +infinito"
+    elif h_val == -oo:
+        titulo_grafico = "Comportamiento de f(x) cuando x tiende a -infinito"
+    else:
+        titulo_grafico = f"Gráfico de f(x) con tendencia h = {h_val}"
+
+    ax.set_title(titulo_grafico, color="white", fontsize=11)
     ax.set_xlabel("x", color="white")
     ax.set_ylabel("f(x)", color="white")
     legend = ax.legend(facecolor="#2a2a3e", labelcolor="white", fontsize=9)
