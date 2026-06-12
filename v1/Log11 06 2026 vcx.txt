@@ -1,0 +1,34 @@
+Agregadas/Modificadas las siguientes lineas de codigo: 
+--------(lin98-lin118)----------- SELECTOR DE LADOS
+entrada_h = ctk.CTkEntry(
+    frame_izq,
+    width=280,
+    height=36,
+    placeholder_text="Ej: 1  ó  oo",
+    font=ctk.CTkFont(size=13)
+)
+entrada_h.pack(padx=20, pady=(4, 16))
+ctk.CTkLabel(
+    frame_izq,
+    text="Dirección del límite:",
+    font=ctk.CTkFont(size=13, weight="bold"),
+    anchor="w"
+).pack(padx=20, anchor="w")
+
+selector_direccion = ctk.CTkOptionMenu(
+    frame_izq,
+    values=["Bilateral", "Izquierda (−)", "Derecha (+)"],
+    width=280
+)
+selector_direccion.pack(padx=20, pady=(4, 16))
+
+---------(lin218-lin226)---------- RESULTADOS SEGUN LOS LADOS
+direccion = selector_direccion.get()
+        if direccion == "Izquierda (−)":
+            resultado = limite_lateral(expresion, h_val, "-")
+            pasos = [f"Límite por la izquierda en x → {h_val}", f"Resultado: {resultado}"]
+        elif direccion == "Derecha (+)":
+            resultado = limite_lateral(expresion, h_val, "+")
+            pasos = [f"Límite por la derecha en x → {h_val}", f"Resultado: {resultado}"]
+        else:
+            resultado, pasos = calcular_limite_propio(expresion, h_val)
