@@ -96,6 +96,21 @@ def limite_lateral(expresion, h_val, direccion):
         return None
 
 
+def limites_laterales_iguales(lim_izq, lim_der):
+    """Comprueba si ambos limites laterales representan el mismo resultado."""
+    if lim_izq is None or lim_der is None:
+        return False
+
+    # Esta comparacion directa permite reconocer casos como oo == oo.
+    if lim_izq == lim_der:
+        return True
+
+    try:
+        return sp.simplify(lim_izq - lim_der) == 0
+    except Exception:
+        return False
+
+
 def calcular_limite_propio(expresion, h_val):
     """
     Construye el calculo del limite paso a paso.
@@ -138,14 +153,11 @@ def calcular_limite_propio(expresion, h_val):
 
     if lim_izq is not None and lim_der is not None:
         # Un limite existe solamente cuando ambos lados llegan al mismo valor.
-        if sp.simplify(lim_izq - lim_der) == 0:
+        if limites_laterales_iguales(lim_izq, lim_der):
             pasos.append("  Limites laterales iguales. El limite existe.")
             resultado_final = lim_izq
         else:
             pasos.append("  Limites laterales distintos. El limite no existe.")
-            resultado_final = None
-
-    if resultado_final is None and lim_izq is not None:
-        resultado_final = lim_izq
+            return None, pasos
 
     return resultado_final, pasos
