@@ -215,27 +215,27 @@ def calcular_limite_propio(expresion, h_val):
     if exito:
         explicacion.append(f"El resultado obtenido es {resultado}.")
         explicacion.append("")
-        explicacion.append("Como no aparece una indeterminación,")
-        explicacion.append("ese valor corresponde al límite.")
-        return resultado, explicacion
+        explicacion.append("Aunque la función está definida en el punto,")
+        explicacion.append("se deben verificar ambos límites laterales.")
+        resultado_final = resultado
+    else:
+        explicacion.append("La sustitución produce una indeterminación.")
+        explicacion.append("")
+        explicacion.append("Transformaciones algebraicas")
+        explicacion.append("")
+        explicacion.append("Se intenta simplificar la función para")
+        explicacion.append("eliminar la indeterminación encontrada.")
+        transformaciones = aplicar_algebra(expresion)
 
-    explicacion.append("La sustitución produce una indeterminación.")
-    explicacion.append("")
-    explicacion.append("Transformaciones algebraicas")
-    explicacion.append("")
-    explicacion.append("Se intenta simplificar la función para")
-    explicacion.append("eliminar la indeterminación encontrada.")
-    transformaciones = aplicar_algebra(expresion)
-
-    # Se prueban las transformaciones una por una hasta encontrar un resultado.
-    for nombre, expresion_transformada in transformaciones:
-        resultado, exito = sustitucion_directa(expresion_transformada, h_val)
-        if exito:
-            explicacion.append(f"Método utilizado: {nombre}.")
-            explicacion.append(f"Expresión obtenida: {expresion_transformada}")
-            explicacion.append(f"Resultado al reemplazar: {resultado}")
-            resultado_final = resultado
-            break
+        # Se prueban las transformaciones una por una hasta encontrar un resultado.
+        for nombre, expresion_transformada in transformaciones:
+            resultado, exito = sustitucion_directa(expresion_transformada, h_val)
+            if exito:
+                explicacion.append(f"Método utilizado: {nombre}.")
+                explicacion.append(f"Expresión obtenida: {expresion_transformada}")
+                explicacion.append(f"Resultado al reemplazar: {resultado}")
+                resultado_final = resultado
+                break
 
     explicacion.append("")
     explicacion.append("Verificación con límites laterales")
@@ -261,5 +261,10 @@ def calcular_limite_propio(expresion, h_val):
             explicacion.append("Los resultados laterales son diferentes,")
             explicacion.append("por lo tanto el límite no existe.")
             return None, explicacion
+    else:
+        explicacion.append("")
+        explicacion.append("La función no puede aproximarse por ambos lados,")
+        explicacion.append("por lo tanto el límite bilateral no existe.")
+        return None, explicacion
 
     return resultado_final, explicacion
