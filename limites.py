@@ -23,6 +23,13 @@ def es_indeterminado(valor):
     if str(valor) in ["nan", "zoo"]:
         return True
 
+    # Algunas expresiones contienen nan o zoo dentro de un resultado mayor.
+    try:
+        if valor.has(sp.nan) or valor.has(sp.zoo):
+            return True
+    except Exception:
+        pass
+
     return False
 
 
@@ -91,6 +98,10 @@ def limite_lateral(expresion, h_val, direccion):
     # Por ahora se conserva para mantener el funcionamiento del primer avance.
     try:
         resultado = limit(expresion, x, h_val, direccion)
+
+        if es_indeterminado(resultado):
+            return None
+
         return resultado
     except Exception:
         return None
