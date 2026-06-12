@@ -1,7 +1,13 @@
-import customtkinter as ctk
-from sympy import lambdify, oo, sympify
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+try:
+    import customtkinter as ctk
+    from sympy import lambdify, oo, sympify
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+except ImportError as error:
+    print("No se pudo iniciar la aplicacion porque falta una libreria.")
+    print("Ejecuta: pip install sympy customtkinter matplotlib")
+    print(f"Detalle: {error}")
+    raise SystemExit
 
 # Se importa la logica matematica desde limites.py para mantener separadas
 # la interfaz y la resolucion de los limites.
@@ -190,29 +196,64 @@ canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
 #  FUNCION PRINCIPAL: calcular()
 # ─────────────────────────────────────────────
 
+def mostrar_explicacion(texto):
+    """Reemplaza el contenido de la caja de explicacion."""
+    caja_pasos.configure(state="normal")
+    caja_pasos.delete("1.0", "end")
+    caja_pasos.insert("end", texto)
+    caja_pasos.configure(state="disabled")
+
+
+def mostrar_error(titulo, explicacion):
+    """Muestra un error comprensible sin cerrar la aplicacion."""
+    label_resultado.configure(text=titulo, text_color="#ef9a9a")
+    mostrar_explicacion(explicacion)
+
+
 def calcular():
     """Lee las entradas, ejecuta el algoritmo y actualiza la interfaz."""
+    funcion_str = entrada_funcion.get().strip()
+    h_str = entrada_h.get().strip()
+
+    if not funcion_str or not h_str:
+        mostrar_error(
+            "Completa ambos campos",
+            "Debes ingresar una función y el valor de tendencia h."
+        )
+        return
+
+    # La función y h se validan por separado para mostrar mensajes específicos.
     try:
-        # strip elimina espacios accidentales al inicio y al final.
-        funcion_str = entrada_funcion.get().strip()
-        h_str = entrada_h.get().strip()
-
-        if not funcion_str or not h_str:
-            label_resultado.configure(text="Completa ambos campos", text_color="#ff8a65")
-            return
-
-        # Sympify convierte el texto ingresado en una expresion de SymPy.
         expresion = sympify(funcion_str)
+        if not expresion.free_symbols.issubset({x}):
+            raise ValueError
+    except Exception:
+        mostrar_error(
+            "No se pudo interpretar la función",
+            "Revisa la sintaxis ingresada.\n\n"
+            "Recuerda escribir las multiplicaciones usando *.\n"
+            "Ejemplo correcto: sin(5*x)/(x - sin(2*x))"
+        )
+        return
 
-        # Se aceptan distintas formas de escribir infinito.
+    try:
         if h_str.lower() in ["oo", "inf", "infinito"]:
             h_val = oo
         elif h_str.lower() in ["-oo", "-inf"]:
             h_val = -oo
         else:
             h_val = sympify(h_str)
+            if h_val.free_symbols or h_val.is_number is not True:
+                raise ValueError
+    except Exception:
+        mostrar_error(
+            "El valor de h no es válido",
+            'Ingresa un número o utiliza "oo" y "-oo" para infinito.\n\n'
+            "Ejemplos válidos: 0, 2, pi, oo, -oo"
+        )
+        return
 
-        # ── Ejecutar algoritmo con selecciones
+    try:
         direccion = selector_direccion.get()
         if direccion == "Izquierda (−)":
             resultado = limite_lateral(expresion, h_val, "-")
@@ -236,7 +277,7 @@ def calcular():
             ]
         else:
             resultado, pasos = calcular_limite_propio(expresion, h_val)
-        # Mostrar resultado
+
         if resultado is not None:
             label_resultado.configure(
                 text=f"lím f(x) = {resultado}",
@@ -248,25 +289,22 @@ def calcular():
                 text_color="#ef9a9a"
             )
 
-        # La caja se habilita solo mientras se reemplaza su contenido.
-        caja_pasos.configure(state="normal")
-        caja_pasos.delete("1.0", "end")
-        caja_pasos.insert("end", "\n".join(pasos))
-        caja_pasos.configure(state="disabled")
+        # Si Matplotlib falla, el resultado matemático se mantiene visible.
+        try:
+            graficar(expresion, h_val, resultado)
+        except Exception:
+            pasos.append("")
+            pasos.append("No se pudo generar el gráfico,")
+            pasos.append("pero el cálculo del límite fue completado.")
 
-        # ── Graficar ──
-        graficar(expresion, h_val, resultado)
+        mostrar_explicacion("\n".join(pasos))
 
-    except Exception as e:
-        # Evita que la aplicacion se cierre si el usuario ingresa datos invalidos.
-        label_resultado.configure(
-            text=f"Error: {e}",
-            text_color="#ef9a9a"
+    except Exception:
+        mostrar_error(
+            "No se pudo completar el cálculo",
+            "Ocurrió un error inesperado durante el procedimiento.\n\n"
+            "Revisa los datos ingresados e intenta nuevamente."
         )
-        caja_pasos.configure(state="normal")
-        caja_pasos.delete("1.0", "end")
-        caja_pasos.insert("end", f"Error al procesar:\n{e}")
-        caja_pasos.configure(state="disabled")
 
 
 def graficar(expresion, h_val, resultado):
