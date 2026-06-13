@@ -1,5 +1,6 @@
 from sympy import cancel, expand, factor, simplify, symbols, trigsimp
 import sympy as sp
+import math
 
 
 # Este archivo contiene solamente la parte matematica del programa.
@@ -100,7 +101,8 @@ def aplicar_algebra(expresion):
 def evaluar_en_punto(expresion, valor_x):
     """Evalua la funcion en un punto y retorna un numero real."""
     try:
-        resultado = sp.N(expresion.subs(x, valor_x), 15)
+        # Usar decimal evita construir numeros exactos gigantes en potencias.
+        resultado = sp.N(expresion.subs(x, sp.Float(valor_x, 30)), 30)
 
         if es_indeterminado(resultado):
             return None
@@ -108,7 +110,8 @@ def evaluar_en_punto(expresion, valor_x):
         if resultado.is_real is False or resultado in [sp.oo, -sp.oo]:
             return None
 
-        return float(resultado)
+        valor_decimal = float(resultado)
+        return valor_decimal
     except Exception:
         return None
 
@@ -150,6 +153,9 @@ def analizar_aproximaciones(aproximaciones):
     valores = [valor_y for valor_x, valor_y in aproximaciones]
     ultimos = valores[-4:]
 
+    if math.isinf(ultimos[-1]):
+        return sp.oo if ultimos[-1] > 0 else -sp.oo
+
     # Detectar crecimiento sostenido hacia infinito positivo o negativo.
     mismo_signo = all(valor > 0 for valor in ultimos) or all(
         valor < 0 for valor in ultimos
@@ -158,8 +164,30 @@ def analizar_aproximaciones(aproximaciones):
         abs(ultimos[i]) < abs(ultimos[i + 1])
         for i in range(len(ultimos) - 1)
     )
-    if mismo_signo and magnitudes_crecientes and abs(ultimos[-1]) > 1e6:
+    aumentos_magnitud = [
+        abs(ultimos[i + 1]) - abs(ultimos[i])
+        for i in range(len(ultimos) - 1)
+    ]
+    crecimiento_no_se_frena = aumentos_magnitud[-1] >= 0.8 * aumentos_magnitud[0]
+    if (
+        mismo_signo
+        and magnitudes_crecientes
+        and (
+            abs(ultimos[-1]) > 1e6
+            or (abs(ultimos[-1]) > 10 and crecimiento_no_se_frena)
+        )
+    ):
         return sp.oo if ultimos[-1] > 0 else -sp.oo
+
+    # Algunas funciones se acercan a cero lentamente, como sqrt(x) cuando
+    # x tiende a cero por la derecha. Se exige una disminucion sostenida y
+    # marcada para no confundir este caso con una funcion oscilatoria.
+    magnitudes_decrecientes = all(
+        abs(ultimos[i]) > abs(ultimos[i + 1])
+        for i in range(len(ultimos) - 1)
+    )
+    if magnitudes_decrecientes and abs(ultimos[-1]) <= abs(ultimos[0]) / 10:
+        return sp.S.Zero
 
     # Si los ultimos valores cambian muy poco, se considera que convergen.
     tolerancia = 0.0001
@@ -171,7 +199,26 @@ def analizar_aproximaciones(aproximaciones):
     if all(diferencia <= tolerancia * escala for diferencia in diferencias):
         if abs(ultimos[-1]) <= tolerancia:
             return sp.S.Zero
-        return sp.nsimplify(ultimos[-1], tolerance=tolerancia, full=False)
+        aproximacion = sp.nsimplify(
+            ultimos[-1], tolerance=tolerancia, full=False, rational=True
+        )
+        if aproximacion.is_Rational and abs(float(aproximacion) - ultimos[-1]) <= tolerancia:
+            # Evita mostrar fracciones enormes cuando el valor es una constante
+            # irracional aproximada, como el numero e.
+            if abs(aproximacion.q) <= 100:
+                return aproximacion
+        return round(ultimos[-1], 6)
+
+    # En limites al infinito, un crecimiento monotono que no se estabiliza
+    # indica divergencia, incluso en funciones lentas como log(x).
+    valores_x = [valor_x for valor_x, valor_y in aproximaciones]
+    es_aproximacion_infinita = abs(valores_x[-1]) >= 10 ** 6
+    creciente = all(ultimos[i] < ultimos[i + 1] for i in range(len(ultimos) - 1))
+    decreciente = all(ultimos[i] > ultimos[i + 1] for i in range(len(ultimos) - 1))
+    if es_aproximacion_infinita and creciente and ultimos[-1] > 10:
+        return sp.oo
+    if es_aproximacion_infinita and decreciente and ultimos[-1] < -10:
+        return -sp.oo
 
     return None
 
@@ -179,7 +226,30 @@ def analizar_aproximaciones(aproximaciones):
 def limite_lateral(expresion, h_val, direccion):
     """Calcula un limite lateral mediante aproximaciones generadas con ciclos."""
     aproximaciones = generar_aproximaciones(expresion, h_val, direccion)
-    return analizar_aproximaciones(aproximaciones)
+    resultado = analizar_aproximaciones(aproximaciones)
+    if resultado is not None:
+        return resultado
+
+    # En funciones continuas por un solo lado, la aproximacion puede ser lenta.
+    # Se acepta el valor del punto solo si los datos se acercan claramente a el.
+    valor_punto, existe_valor = sustitucion_directa(expresion, h_val)
+    if existe_valor and len(aproximaciones) >= 4:
+        try:
+            valor_objetivo = float(valor_punto)
+            distancias = [
+                abs(valor_y - valor_objetivo)
+                for valor_x, valor_y in aproximaciones
+            ]
+            se_acerca = all(
+                distancias[i] > distancias[i + 1]
+                for i in range(len(distancias) - 1)
+            )
+            if se_acerca and distancias[-1] <= distancias[0] / 3:
+                return valor_punto
+        except Exception:
+            pass
+
+    return None
 
 
 def limites_laterales_iguales(lim_izq, lim_der):
@@ -254,8 +324,9 @@ def calcular_limite_propio(expresion, h_val):
             explicacion.append("")
             explicacion.append("Ambos lados entregan el mismo valor,")
             explicacion.append("por lo tanto el límite existe.")
-            if resultado_final is None:
-                resultado_final = lim_izq
+            # El valor del limite depende de los laterales, no necesariamente
+            # del valor aislado que tenga la funcion exactamente en h.
+            resultado_final = lim_izq
         else:
             explicacion.append("")
             explicacion.append("Los resultados laterales son diferentes,")

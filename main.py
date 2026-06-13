@@ -208,6 +208,21 @@ def mostrar_error(titulo, explicacion):
     """Muestra un error comprensible sin cerrar la aplicacion."""
     label_resultado.configure(text=titulo, text_color="#ef9a9a")
     mostrar_explicacion(explicacion)
+    limpiar_grafico(titulo)
+
+
+def limpiar_grafico(mensaje):
+    """Limpia resultados anteriores cuando no se puede procesar una entrada."""
+    ax.clear()
+    ax.set_facecolor("#1e1e2e")
+    ax.tick_params(colors="white")
+    for spine in ax.spines.values():
+        spine.set_edgecolor("#555")
+    ax.grid(True, color="#333", linestyle="--", linewidth=0.5)
+    ax.set_title(mensaje, color="#ef9a9a", fontsize=11)
+    ax.set_xlabel("x", color="white")
+    ax.set_ylabel("f(x)", color="white")
+    canvas.draw()
 
 
 def calcular():
@@ -243,7 +258,11 @@ def calcular():
             h_val = -oo
         else:
             h_val = sympify(h_str)
-            if h_val.free_symbols or h_val.is_number is not True:
+            if (
+                h_val.free_symbols
+                or h_val.is_number is not True
+                or h_val.is_real is not True
+            ):
                 raise ValueError
     except Exception:
         mostrar_error(
@@ -360,27 +379,80 @@ def graficar(expresion, h_val, resultado):
 
     # Cuando aparece None se corta la linea para no unir discontinuidades.
     segmento_x, segmento_y = [], []
+    etiqueta_funcion_agregada = False
     for i in range(len(lista_x)):
         if lista_y[i] is None:
             if segmento_x:
-                ax.plot(segmento_x, segmento_y, color="#4fc3f7", linewidth=2)
+                etiqueta = "f(x)" if not etiqueta_funcion_agregada else "_nolegend_"
+                ax.plot(
+                    segmento_x, segmento_y, color="#4fc3f7",
+                    linewidth=2, label=etiqueta
+                )
+                etiqueta_funcion_agregada = True
                 segmento_x, segmento_y = [], []
         else:
+            # Si hay un salto grande entre puntos consecutivos, se termina el
+            # segmento actual para evitar dibujar una linea vertical falsa.
+            if segmento_y:
+                salto = abs(lista_y[i] - segmento_y[-1])
+                escala = max(1, abs(lista_y[i]), abs(segmento_y[-1]))
+                valores_moderados = abs(lista_y[i]) < 10 and abs(segmento_y[-1]) < 10
+                hay_discontinuidad = False
+
+                if valores_moderados and salto > 0.5 * escala:
+                    try:
+                        punto_medio = (lista_x[i] + segmento_x[-1]) / 2
+                        valor_medio = float(f(punto_medio))
+                        promedio_extremos = (lista_y[i] + segmento_y[-1]) / 2
+                        hay_discontinuidad = (
+                            abs(valor_medio - promedio_extremos) > 0.25 * escala
+                        )
+                    except Exception:
+                        hay_discontinuidad = True
+
+                if hay_discontinuidad:
+                    etiqueta = "f(x)" if not etiqueta_funcion_agregada else "_nolegend_"
+                    ax.plot(
+                        segmento_x, segmento_y, color="#4fc3f7",
+                        linewidth=2, label=etiqueta
+                    )
+                    etiqueta_funcion_agregada = True
+                    segmento_x, segmento_y = [], []
+
             segmento_x.append(lista_x[i])
             segmento_y.append(lista_y[i])
     if segmento_x:
-        ax.plot(segmento_x, segmento_y, color="#4fc3f7", linewidth=2, label="f(x)")
+        etiqueta = "f(x)" if not etiqueta_funcion_agregada else "_nolegend_"
+        ax.plot(segmento_x, segmento_y, color="#4fc3f7", linewidth=2, label=etiqueta)
 
     # Linea vertical en h
     if h_val not in [oo, -oo]:
         ax.axvline(x=centro, color="#ff8a65", linestyle="--", linewidth=1.4, label=f"x = h = {h_val}")
 
-    # Punto del limite
-    if resultado is not None and h_val not in [oo, -oo]:
+    # Punto del limite. Si la funcion no esta definida en h, se dibuja vacio.
+    if resultado is not None and resultado not in [oo, -oo] and h_val not in [oo, -oo]:
         try:
             y_lim = float(resultado)
-            ax.plot(centro, y_lim, "o", color="#a5d6a7", markersize=9,
-                    zorder=5, label=f"Límite = {resultado}")
+            valor_en_h = expresion.subs(x, h_val)
+            funcion_definida = valor_en_h.is_finite is True
+            coincide_con_limite = funcion_definida and valor_en_h == resultado
+
+            if coincide_con_limite:
+                ax.plot(centro, y_lim, "o", color="#a5d6a7", markersize=9,
+                        zorder=5, label=f"Límite = {resultado}")
+            else:
+                ax.plot(
+                    centro, y_lim, "o", markerfacecolor="#1e1e2e",
+                    markeredgecolor="#a5d6a7", markeredgewidth=2,
+                    markersize=9, zorder=5, label=f"Límite = {resultado}"
+                )
+
+                # Si existe un valor aislado distinto, tambien se muestra.
+                if funcion_definida:
+                    ax.plot(
+                        centro, float(valor_en_h), "o", color="#ffca80",
+                        markersize=7, zorder=5, label=f"f({h_val}) = {valor_en_h}"
+                    )
         except Exception:
             pass
 
@@ -394,7 +466,9 @@ def graficar(expresion, h_val, resultado):
     ax.set_title(titulo_grafico, color="white", fontsize=11)
     ax.set_xlabel("x", color="white")
     ax.set_ylabel("f(x)", color="white")
-    legend = ax.legend(facecolor="#2a2a3e", labelcolor="white", fontsize=9)
+    elementos, etiquetas = ax.get_legend_handles_labels()
+    if elementos:
+        ax.legend(facecolor="#2a2a3e", labelcolor="white", fontsize=9)
 
     canvas.draw()
 
